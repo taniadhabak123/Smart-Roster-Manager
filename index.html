@@ -1,0 +1,158 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Smart Roster Manager</title>
+<style>
+:root{--bg:#f5f6f4;--sf:#fff;--tx:#17211f;--mu:#62706c;--bd:#dfe4e1;--ac:#0f766e;--pt:#fff;--ok:#d5f0e2;--okt:#0f5f3a;--er:#fbd8d6;--ert:#9f1d1d;--wo:#fde6bd;--so:#e6e9e7;--ph:#e4dbf8;--lv:#d1e3fa;--co:#cbeee8;--wk:#eef1ef;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#111716;--sf:#182120;--tx:#e6eeec;--mu:#93a39f;--bd:#2a3634;--ac:#4fd1c2;--pt:#07201d;--ok:#164231;--okt:#80e3ac;--er:#4b1f1f;--ert:#ffa0a0;--wo:#4a3a14;--so:#26302e;--ph:#352d52;--lv:#1c3552;--co:#164038;--wk:#1e2927;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#111716;--sf:#182120;--tx:#e6eeec;--mu:#93a39f;--bd:#2a3634;--ac:#4fd1c2;--pt:#07201d;--ok:#164231;--okt:#80e3ac;--er:#4b1f1f;--ert:#ffa0a0;--wo:#4a3a14;--so:#26302e;--ph:#352d52;--lv:#1c3552;--co:#164038;--wk:#1e2927;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{max-width:1400px;margin:0 auto;padding:16px}header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}h1{margin:0;font-size:21px;letter-spacing:-.01em}h3{margin:18px 0 8px}
+.mu,small{color:var(--mu)}.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:6px 10px}button{cursor:pointer}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac)}
+button.pri{background:var(--ac);border-color:var(--ac);color:var(--pt);font-weight:600}
+.kp{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.k{background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:8px 14px;display:flex;flex-direction:column;min-width:130px;color:var(--mu);font-size:12px}.k b{font-size:22px;color:var(--tx)}.k.bad b{color:var(--ert)}.k.good b{color:var(--okt)}
+nav{display:flex;gap:4px;margin:14px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap}nav button{border:0;background:none}nav button.on{font-weight:700;box-shadow:inset 0 -2px var(--ac)}
+.sc{overflow-x:auto;border:1px solid var(--bd);border-radius:6px;background:var(--sf)}table{border-collapse:collapse;width:100%}
+.g td,.g th{border:1px solid var(--bd)}.g .nm{position:sticky;left:0;background:var(--sf);min-width:200px;max-width:200px;text-align:left;padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:1}
+.g th{font-size:11px;font-weight:500;padding:2px;min-width:27px}.g th.we{background:var(--wk)}.g th.ph{background:var(--ph)}
+.c{text-align:center;font-size:10px;height:26px;cursor:pointer;min-width:27px}.c-WO{background:var(--wo)}.c-SO{background:var(--so)}.c-PH{background:var(--ph)}.c-L{background:var(--lv)}.c-C{background:var(--co)}
+.cg{background:var(--ok);color:var(--okt)}.cr{background:var(--er);color:var(--ert);font-weight:700}.cx{color:var(--mu);cursor:default}.pin{outline:2px solid var(--ac);outline-offset:-2px}
+.lg span{padding:1px 6px;border-radius:4px;margin-right:2px}
+.t td,.t th{padding:4px 6px;text-align:left;border-bottom:1px solid var(--bd)}.t input,.t select{width:100%;min-width:90px}
+.is{background:var(--sf);border:1px solid var(--bd);border-left:4px solid var(--mu);border-radius:6px;padding:8px 12px;margin:6px 0}.is.error{border-left-color:var(--ert)}.is.warn{border-left-color:#d99a00}.tag{font-size:11px;font-weight:700;margin-right:6px;color:var(--mu)}
+.fx,.cd{background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:10px 14px;margin:8px 0}.fx div{margin:6px 0}.note{background:var(--lv);padding:8px 12px;border-radius:6px;display:flex;justify-content:space-between;gap:8px}
+.cal7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:680px}.cal{border:1px solid var(--bd);border-radius:6px;padding:4px;min-height:50px;font-size:12px;cursor:pointer}.cal.c-W{background:var(--ok)}
+textarea{width:100%;margin-top:8px}
+</style></head><body><div id=app></div>
+<script>
+const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],CAL={c:'365 days',h:'Daily, PH off',s:'Sun & PH off'};
+let S,R,P,E,B,AP,AB,V={tab:'roster',scope:'all',sel:'',emp:'e1',fix:null,msg:'',csv:'',sev:'all'};
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';'),nxt=a=>a.reduce((m,x)=>Math.max(m,+x.id.slice(1)),0)+1;
+const opt=(l,v)=>l.map(o=>`<option value="${o.id}" ${o.id==v?'selected':''}>${esc(o.name)}</option>`).join('');
+const pn=id=>(S.pods.find(p=>p.id==id)||{}).name||'';
+function seed(){
+const BR='Kaya Naturals|CS:s,ACC:s;Bloomwear|CS:s,RET:s;UrbanNest|CS:s;Zenfit|CS:c,ACC:s;PureRoots|CS:s,NDR:s;Glowlab|CS:s,ACC:s,RET:s;TrailKart|CS:s,NDR:s;Soulsip|CS:h;PetPalz|CS:c;Brewmade|CS:s,ACC:s;Jewelia|CS:s,ACC:s;Aurasleep|CS:s,RET:s;NutriNook|CS:c,NDR:c;FitFuel|CS:s;Craftora|CS:s,NDR:s;LunaCare|CS:s,ACC:s;Mocha Co|CS:s;Vedaa|CS:s,RET:s;Gadgetly|CS:h,NDR:h;Shoptide|CS:c:1:2,ACC:h,NDR:s;Velvetique|CS:h,ACC:h;Orchid & Oak|CS:c,RET:h,NDR:s;Spicetrail|CS:h,ACC:s;Heliox|CS:h,ACC:h'.split(';');
+const NM='Aarav Mehta,Diya Nair,Kabir Shah,Ishita Rao,Rohan Iyer,Meera Kulkarni,Vivaan Gupta,Anaya Singh,Aditya Joshi,Sara Khan,Arjun Patel,Riya Sharma,Dev Malhotra,Tara Menon,Karan Verma,Naina Bose,Yash Kapoor,Pooja Reddy,Imran Qureshi,Neha Desai,Siddharth Jain,Farah Sheikh,Manish Pillai,Lakshmi Das,Rahul Chopra,Ayesha Ansari,Vikram Naik,Sneha Pawar,Tanvi Bhatt,Harsh Vora,Pranav Kale,Zoya Merchant,Nikhil Rane,Simran Kaur,Omkar Joshi'.split(',');
+const AS=[...Array(19)].map((_,i)=>String(i+1)).concat('20.CS,20.CS;~20.ACC;~20.NDR,20.ACC;20.NDR,21.CS,21.CS;21.ACC,21.ACC,22.CS,22.RET;22.NDR,22.CS;22.RET,23.CS;23.ACC,23.CS;23.ACC,24,24,~4;~9,~9;~13;~8,~13;~19;~4'.split(','));
+const PF={4:2,9:1,13:3,20:1,22:3,24:2};
+const s={month:'2026-11',pods:['Alpha','Beta','Gamma','Delta'].map((n,i)=>({id:'d'+(i+1),name:'Pod '+n,lead:['e1','e10','e20','e29'][i]})),emps:[],brands:[],procs:[],asg:[],hol:['2026-11-08','2026-11-24','2026-12-25','2027-01-26'],leaves:[{e:'e13',d:'2026-11-12',t:'L'},{e:'e24',d:'2026-11-20',t:'C'},{e:'e28',d:'2026-11-26',t:'L'}],man:{},R:{},pub:{}};
+BR.forEach((b,i)=>{const [n,ps]=b.split('|');s.brands.push({id:'b'+(i+1),name:n});ps.split(',').forEach(p=>{const [pn,c,mn,wm]=p.split(':');s.procs.push({id:'p'+(s.procs.length+1),b:'b'+(i+1),name:pn,cal:c,min:+mn||1,wmin:+wm||+mn||1})})});
+NM.forEach((n,i)=>{const k=i+1;s.emps.push({id:'e'+k,name:n,pod:'d'+(k<10?1:k<20?2:k<29?3:4),pref:PF[k]??null})});
+AS.forEach((a,i)=>a.split(';').forEach(t=>{const bk=t[0]=='~';if(bk)t=t.slice(1);const [bi,pn]=t.split('.');s.procs.filter(p=>p.b=='b'+bi&&(!pn||p.name==pn)).forEach(p=>s.asg.push({e:'e'+(i+1),p:p.id,r:bk?'B':'P'}))}));
+return s}
+const save=()=>{try{localStorage.setItem('rosterS_v1',JSON.stringify(S))}catch(e){}};
+function load(){try{const x=JSON.parse(localStorage.getItem('rosterS_v1'));if(x&&x.emps)return x}catch(e){}return seed()}
+function rb(){P={};E={};B={};AP={};AB={};S.procs.forEach(p=>{P[p.id]=p;AP[p.id]=[];AB[p.id]=[]});S.emps.forEach(e=>E[e.id]=e);S.brands.forEach(b=>B[b.id]=b);S.asg.forEach(a=>P[a.p]&&E[a.e]&&(a.r=='P'?AP:AB)[a.p].push(a.e));R=S.R[S.month]||(S.R[S.month]={});S.emps.forEach(e=>R[e.id]=R[e.id]||{})}
+/* ---- calendar & rules ---- */
+const ND=()=>new Date(+S.month.slice(0,4),+S.month.slice(5),0).getDate(),dow=d=>new Date(+S.month.slice(0,4),+S.month.slice(5)-1,d).getDay(),iso=d=>S.month+'-'+String(d).padStart(2,'0'),isH=d=>S.hol.includes(iso(d));
+const ops=(p,d)=>p.cal=='c'||(p.cal=='h'?!isH(d):!(isH(d)||dow(d)==0)),need=(p,d)=>ops(p,d)?(dow(d)%6==0?p.wmin:p.min):0;
+const r=(e,d)=>(R[e]||{})[d],isW=(e,d)=>!r(e,d),pw=(p,d)=>AP[p.id].filter(e=>isW(e,d)).length,pinned=(e,d)=>S.man[e+'|'+iso(d)];
+const slack=(e,d)=>S.asg.filter(a=>a.e==e&&a.r=='P').every(a=>{const p=P[a.p];return need(p,d)==0||pw(p,d)>need(p,d)});
+const fl=e=>!S.asg.some(a=>a.e==e&&a.r=='P');
+const rest=(c,d)=>c=='WO'||c=='SO'||(c=='PH'&&dow(d)==0),wk=g=>g.length>=4&&dow(g[g.length-1])==0;
+function segs(){const g=[];let c=[];for(let d=1;d<=ND();d++){c.push(d);if(dow(d)==0||d==ND()){g.push(c);c=[]}}return g}
+/* backup deployment: a backup covers a shortfall only if working, has spare capacity in own primaries, and serves one brand per day */
+function dep(d){const o={},bb={};S.procs.forEach(p=>{let s=need(p,d)-pw(p,d);if(s<=0)return;for(const e of AB[p.id]){if(s<=0)break;if(!isW(e,d)||(bb[e]&&bb[e]!=p.b)||!slack(e,d))continue;(o[p.id]=o[p.id]||[]).push(e);bb[e]=p.b;s--}});return{o,bb}}
+function gaps(d){const o=dep(d).o;return S.procs.reduce((s,p)=>s+Math.max(0,need(p,d)-pw(p,d)-(o[p.id]||[]).length),0)}
+/* ---- validation ---- */
+function an(){const I=[],C={},n=ND();let req=0,ok=0;
+S.procs.forEach(p=>{if(!AP[p.id].length)I.push({s:'error',t:'SETUP',m:`${B[p.b].name} · ${p.name} has no primary employee assigned.`})});
+for(let d=1;d<=n;d++){const o=dep(d).o;S.procs.forEach(p=>{const nd=need(p,d);if(!nd)return;const h=pw(p,d),b=(o[p.id]||[]).length;(C[p.id]=C[p.id]||{})[d]={nd,h,b};req++;if(h+b>=nd){ok++;return}
+const w=[...AP[p.id],...AB[p.id]].map(e=>E[e].name+' – '+(r(e,d)||'working'));
+I.push({s:'error',t:'GAP',p:p.id,d,m:`${B[p.b].name} · ${p.name} needs ${nd} on ${DN[dow(d)]} ${d}, covered ${h+b}. `+(w.length?'Assigned: '+w.join(', ')+'.':'')})})}
+const sg=segs();S.emps.forEach(e=>{if(!S.asg.some(a=>a.e==e.id))return;let run=0;
+for(let d=1;d<=n;d++){if(isW(e.id,d)){if(++run==7)I.push({s:'error',t:'CONSECUTIVE',e:e.id,m:`${e.name} works 7+ days in a row from day ${d-6}.`})}else run=0;
+if(isW(e.id,d)&&isH(d)&&S.asg.some(a=>a.e==e.id&&a.r=='P'&&ops(P[a.p],d)))I.push({s:'info',t:'HOLIDAY',e:e.id,m:`${e.name} works on public holiday ${iso(d)} (comp-off due).`})}
+sg.forEach(g=>{if(!wk(g))return;if(!g.some(d=>rest(r(e.id,d),d)||['L','C'].includes(r(e.id,d))))I.push({s:'error',t:'NO WEEKLY OFF',e:e.id,m:`${e.name} has no off day in the week of ${g[0]}–${g[g.length-1]}.`});
+else if(e.pref!=null){const k=g.find(d=>r(e.id,d)=='WO');if(k&&dow(k)!=e.pref)I.push({s:'warn',t:'PREFERENCE',e:e.id,m:`${e.name}'s weekly off is ${DN[dow(k)]} ${k}; preferred ${DN[e.pref]}.`})}})});
+I.sort((a,b)=>'ewi'.indexOf(a.s[0])-'ewi'.indexOf(b.s[0]));return{I,C,req,ok}}
+const score=()=>{const I=an().I;return I.filter(x=>x.s=='error').length+.01*I.filter(x=>x.s=='warn').length};
+/* ---- generation: fixed offs first, then weekly offs chosen by least coverage damage, preference, spread ---- */
+function gen(){R=S.R[S.month]={};S.emps.forEach(e=>R[e.id]={});const n=ND();
+S.emps.forEach(e=>{const pr=S.asg.filter(a=>a.e==e.id&&a.r=='P').map(a=>P[a.p]);for(let d=1;d<=n;d++)if(pr.length&&pr.every(p=>!ops(p,d)))R[e.id][d]=pr.every(p=>p.cal=='s')&&dow(d)==0?'SO':isH(d)?'PH':'SO'});
+S.leaves.forEach(l=>{if(l.d.startsWith(S.month)&&R[l.e]){const d=+l.d.slice(8);if(!R[l.e][d])R[l.e][d]=l.t}});
+for(const k in S.man){const [e,dt]=k.split('|');if(!dt.startsWith(S.month)||!R[e])continue;const d=+dt.slice(8),c=S.man[k];if(c=='W')delete R[e][d];else R[e][d]=c}
+const tg=e=>{const x=S.asg.filter(a=>a.e==e.id&&a.r=='P').map(a=>AP[a.p].length);return x.length?Math.min(...x):99};
+[...S.emps].sort((a,b)=>tg(a)-tg(b)).forEach((e,i)=>segs().forEach(sg=>{
+if(!wk(sg)||sg.some(d=>rest(R[e.id][d],d)))return;let best=0,bc=1e9;
+sg.forEach(d=>{if(R[e.id][d]||pinned(e.id,d))return;const g0=gaps(d);R[e.id][d]='WO';const g1=gaps(d);delete R[e.id][d];
+let c=1000*(g1-g0)+(e.pref!=null&&dow(d)!=e.pref?8:0)+2*S.emps.filter(x=>x.pod==e.pod&&R[x.id][d]=='WO').length+((dow(d)-i+70)%7)*.1;
+let l=d-1;while(l>0&&!R[e.id][l])l--;if(d-l-1>6)c+=60*(d-l-7);if(c<bc){bc=c;best=d}});
+if(best)R[e.id][best]='WO'}));
+S.emps.forEach(e=>{for(let d=1,run=0;d<=n;d++){if(R[e.id][d]){run=0;continue}if(++run<7)continue;let b=0,bc=1e9;for(let x=d-6;x<=d;x++){if(R[e.id][x]||pinned(e.id,x))continue;const g0=gaps(x);R[e.id][x]='WO';const c=gaps(x)-g0;delete R[e.id][x];if(c<bc){bc=c;b=x}}if(b){R[e.id][b]='WO';run=d-b}}});
+chd();save();render()}
+const chd=()=>{if(S.pub[S.month]){S.pub[S.month]=false;V.msg='Published roster changed. Review and publish again.'}};
+function cyc(e,d){const c=r(e,d)||'W',o=['W','WO','L','C'],x=o[(o.indexOf(c)+1)%4];S.man[e+'|'+iso(d)]=x;if(x=='W')delete R[e][d];else R[e][d]=x;chd();save();render()}
+const mv=(e,d,d2)=>{delete R[e][d];R[e][d2]='WO';S.man[e+'|'+iso(d)]='W';S.man[e+'|'+iso(d2)]='WO'};
+/* ---- resolution suggestions ---- */
+function sug(p,d){const o=[],s0=score(),sg=segs().find(g=>g.includes(d));
+[...AP[p.id],...AB[p.id]].forEach(e=>{const c=r(e,d);
+if(c=='WO'&&!pinned(e,d))sg.forEach(d2=>{if(d2==d||r(e,d2)||pinned(e,d2))return;delete R[e][d];R[e][d2]='WO';const s=score();delete R[e][d2];R[e][d]='WO';if(s<s0-.5)o.push({k:'swap',e,d,d2,g:s0-s})});
+if(c=='L'||c=='C')o.push({k:'lv',e,d,c})});
+o.sort((a,b)=>(b.g||0)-(a.g||0));const bb=dep(d).bb;let m=0;
+[...S.emps].sort((a,b)=>fl(b.id)-fl(a.id)).forEach(e=>{if(m>=3||AP[p.id].includes(e.id)||AB[p.id].includes(e.id)||!isW(e.id,d)||(bb[e.id]&&bb[e.id]!=p.b)||!slack(e.id,d))return;m++;o.push({k:'bk',e:e.id,p:p.id,fl:fl(e.id)})});o.sort((a,b)=>(a.k=='lv')-(b.k=='lv'));
+return o}
+function fixFor(p,d){V.fix={p,d,items:sug(P[p],d)};render()}
+function apply(i){const f=V.fix.items[i];if(f.k=='swap')mv(f.e,f.d,f.d2);else if(f.k=='bk'){S.asg.push({e:f.e,p:f.p,r:'B'});rb()}else{S.leaves=S.leaves.filter(l=>!(l.e==f.e&&l.d==iso(f.d)));delete R[f.e][f.d]}V.fix=null;chd();save();render()}
+function auto(){let n=0;const sk=new Set();for(let i=0;i<40;i++){const g=an().I.find(x=>x.t=='GAP'&&!sk.has(x.p+x.d));if(!g)break;const f=sug(P[g.p],g.d).find(x=>x.k=='swap');if(f){mv(f.e,f.d,f.d2);n++}else sk.add(g.p+g.d)}
+const m=an().I.filter(x=>x.t=='GAP').length;if(n)chd();V.msg=`Auto-fix moved ${n} weekly off(s). `+(m?`${m} gap(s) still need a manager decision (see Conflicts).`:'All coverage gaps are resolved.');save();render()}
+function addL(e,d,t){e=e||$('#lE').value;d=d||$('#lD').value;t=t||$('#lT').value;if(!d||S.leaves.some(l=>l.e==e&&l.d==d))return;const b=an().I.filter(x=>x.t=='GAP').length;S.leaves.push({e,d,t});
+if(d.startsWith(S.month)){const x=+d.slice(8);R[e][x]=t;delete S.man[e+'|'+d]}const a=an().I.filter(x=>x.t=='GAP').length;chd();
+V.msg=`${E[e].name}: ${t=='L'?'leave':'comp-off'} on ${d} recorded. Coverage gaps ${b} → ${a}. `+(a>b?'Open Conflicts for options or run Auto-fix.':'The remaining team keeps coverage.');save();render()}
+const demo=()=>addL('e1',iso(17),'L');
+function pub(){const e=an().I.filter(x=>x.s=='error').length;if(e)V.msg=`Cannot publish: ${e} mandatory conflict(s) remain. Resolve them in Conflicts first.`;else{S.pub[S.month]=true;V.msg='Roster published for '+S.month+'.'}save();render()}
+function setMonth(v){if(!v)return;S.month=v;const had=S.R[v];rb();if(!had)gen();else{save();render()}}
+/* ---- setup edits ---- */
+function ed(a,i,k,v){if(k=='min'||k=='wmin')v=Math.max(0,+v);if(k=='pref')v=v===''?null:+v;S[a][i][k]=v;rb();save();render()}
+function del(a,i){const x=S[a][i];if(a=='emps'){S.asg=S.asg.filter(y=>y.e!=x.id);S.leaves=S.leaves.filter(y=>y.e!=x.id);S.pods.forEach(p=>{if(p.lead==x.id)p.lead=''})}if(a=='procs')S.asg=S.asg.filter(y=>y.p!=x.id);S[a].splice(i,1);if(a=='procs')S.brands=S.brands.filter(b=>S.procs.some(p=>p.b==b.id));rb();save();render()}
+const addE=()=>{S.emps.push({id:'e'+nxt(S.emps),name:'New employee',pod:S.pods[0].id,pref:null});rb();save();render()};
+function addP(){const bn=$('#nB').value.trim(),pr=$('#nP').value.trim();if(!bn||!pr)return;let b=S.brands.find(x=>x.name.toLowerCase()==bn.toLowerCase());if(!b){b={id:'b'+nxt(S.brands),name:bn};S.brands.push(b)}S.procs.push({id:'p'+nxt(S.procs),b:b.id,name:pr,cal:$('#nC').value,min:+$('#nM').value||1,wmin:+$('#nW').value||+$('#nM').value||1});rb();save();render()}
+function addA(){const e=$('#aE').value,p=$('#aP').value;if(S.asg.some(a=>a.e==e&&a.p==p))return;S.asg.push({e,p,r:$('#aR').value});rb();save();render()}
+const reset=()=>{try{localStorage.removeItem('rosterS_v1')}catch(e){}S=seed();rb();V.msg='Sample data restored.';gen()};
+function csv(){const n=ND(),d=[...Array(n)].map((_,i)=>i+1);return['Employee,Pod,'+d.join(',')].concat(S.emps.map(e=>[e.name,pn(e.pod),...d.map(x=>r(e.id,x)||'W')].join(','))).join('\n')}
+/* ---- views ---- */
+function scp(){const sc=V.scope,s=V.sel;let ps=S.procs,es=S.emps;
+if(sc=='pod'){es=es.filter(e=>e.pod==s);ps=ps.filter(p=>AP[p.id].some(e=>E[e].pod==s))}
+if(sc=='brand'){ps=ps.filter(p=>p.b==s);es=es.filter(e=>ps.some(p=>AP[p.id].concat(AB[p.id]).includes(e.id)))}
+if(sc=='proc'){ps=ps.filter(p=>p.id==s);es=es.filter(e=>AP[s].concat(AB[s]).includes(e.id))}
+return{ps,es}}
+function vRoster(A){const sc=V.scope,op=sc=='pod'?S.pods:sc=='brand'?S.brands:sc=='proc'?S.procs.map(p=>({id:p.id,name:B[p.b].name+' · '+p.name})):[];
+if(sc!='all'&&!op.some(o=>o.id==V.sel))V.sel=op[0]?op[0].id:'';
+const{ps,es}=scp(),n=ND(),ds=[...Array(n)].map((_,i)=>i+1);
+const hd=`<tr><th class=nm>Employee</th>${ds.map(d=>`<th class="${dow(d)%6==0?'we':''} ${isH(d)?'ph':''}" title="${iso(d)}${isH(d)?' (public holiday)':''}">${d}<br>${DN[dow(d)][0]}</th>`).join('')}</tr>`;
+const er=es.map(e=>`<tr><td class=nm title="${esc(e.name)}"><b>${esc(e.name)}</b> <small>${esc(pn(e.pod))}</small></td>${ds.map(d=>{const c=r(e.id,d)||'W';return`<td class="c c-${c} ${pinned(e.id,d)?'pin':''}" onclick="cyc('${e.id}',${d})" title="${esc(e.name)} ${iso(d)}: ${c}">${c=='W'?'':c}</td>`}).join('')}</tr>`).join('');
+const pr=ps.map(p=>`<tr><td class=nm title="${CAL[p.cal]}">${esc(B[p.b].name)} · ${p.name} <small>${p.cal}</small></td>${ds.map(d=>{const x=(A.C[p.id]||{})[d];if(!x)return'<td class="c cx">–</td>';const g=x.h+x.b<x.nd;return`<td class="c ${g?'cr':'cg'}" title="need ${x.nd}, working ${x.h}, backup ${x.b}">${x.h+x.b}${x.b?'b':''}</td>`}).join('')}</tr>`).join('');
+return`<div class=bar><select onchange="V.scope=this.value;V.sel='';render()">${[['all','Company'],['pod','Pod'],['brand','Brand'],['proc','Process']].map(([k,l])=>`<option value=${k} ${sc==k?'selected':''}>${l}</option>`).join('')}</select>${sc!='all'?`<select onchange="V.sel=this.value;render()">${opt(op,V.sel)}</select>`:''}<button onclick="V.csv=V.csv?'':csv();render()">CSV</button></div>
+<div class="bar lg"><small>Click a cell to edit (work, WO, L, C). <span class=c-WO>WO</span> weekly off <span class=c-SO>SO</span> Sunday closed <span class=c-PH>PH</span> holiday <span class=c-L>L</span> leave <span class=c-C>C</span> comp-off · coverage: <span class=cg>green</span> met (b = backup deployed) <span class=cr>red</span> short · outline = manual edit</small></div>
+<div class=sc><table class=g>${hd}${er}<tr><th class=nm>Coverage (staff covering)</th><th colspan=${n}></th></tr>${pr}</table></div>${V.csv?`<textarea readonly rows=6 onfocus=this.select()>${esc(V.csv)}</textarea>`:''}`}
+function vEmp(A){const e=E[V.emp]||S.emps[0];if(!e)return'No employees yet.';V.emp=e.id;const n=ND(),cnt={};for(let d=1;d<=n;d++){const c=r(e.id,d)||'W';cnt[c]=(cnt[c]||0)+1}
+const as=S.asg.filter(a=>a.e==e.id).map(a=>`<li>${esc(B[P[a.p].b].name)} · ${P[a.p].name} <small>${a.r=='P'?CAL[P[a.p].cal]:'backup'}</small></li>`).join('');
+const cells=[...Array((dow(1)+6)%7)].map(()=>'<div></div>').concat([...Array(n)].map((_,i)=>{const d=i+1,c=r(e.id,d)||'W';return`<div class="cal c-${c}" onclick="cyc('${e.id}',${d})"><b>${d}</b> <small>${c=='W'?'work':c}${isH(d)?' · holiday':''}</small></div>`})).join('');
+return`<div class=bar><select onchange="V.emp=this.value;render()">${opt(S.emps,e.id)}</select><span class=mu>${esc(pn(e.pod))} · preferred off: ${e.pref==null?'any':DN[e.pref]}</span></div>
+<div class=cd><b>Assignments</b><ul>${as||'<li>None</li>'}</ul><small>Working ${cnt.W||0} · weekly off ${(cnt.WO||0)+(cnt.SO||0)} · holiday ${cnt.PH||0} · leave ${cnt.L||0} · comp-off ${cnt.C||0}</small></div>
+<div class=cal7>${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<small>${x}</small>`).join('')}${cells}</div>
+<h3>Issues for ${esc(e.name)}</h3>${A.I.filter(x=>x.e==e.id).map(x=>`<div class="is ${x.s}"><span class=tag>${x.t}</span>${esc(x.m)}</div>`).join('')||'<p class=mu>None.</p>'}`}
+function vIssues(A){const I=A.I.filter(x=>V.sev=='all'||x.s==V.sev).slice(0,300);
+return`<div class=bar><select onchange="V.sev=this.value;render()">${[['all','All issues'],['error','Mandatory'],['warn','Preferences'],['info','Info']].map(([k,l])=>`<option value=${k} ${V.sev==k?'selected':''}>${l}</option>`).join('')}</select><small>Mandatory = coverage and labour rules (block publishing). Preferences can be overridden.</small></div>${V.fix?fixPanel():''}`+(I.length?I.map(x=>`<div class="is ${x.s}"><span class=tag>${x.t}</span>${esc(x.m)} ${x.t=='GAP'?`<button onclick="fixFor('${x.p}',${x.d})">Suggest fix</button>`:''}</div>`).join(''):'<p class=mu>No issues. All mandatory constraints are satisfied.</p>')}
+function fixPanel(){const{p,d,items}=V.fix,pr=P[p];return`<div class=fx><b>Options for ${esc(B[pr.b].name)} · ${pr.name}, ${DN[dow(d)]} ${d}</b>`+(items.length?items.map((f,i)=>`<div>${f.k=='swap'?`Move ${esc(E[f.e].name)}'s weekly off from day ${f.d} to day ${f.d2} (resolves ${Math.round(f.g)} conflict(s))`:f.k=='bk'?`Add ${esc(E[f.e].name)} as backup (${f.fl?'floater, free that day':'has spare capacity'})`:`Reconsider ${esc(E[f.e].name)}'s ${f.c=='L'?'leave':'comp-off'} on day ${f.d}`} <button onclick="apply(${i})">Apply</button></div>`).join(''):'<div>No automatic fix. A manager decision is needed: add a resource, lower the minimum, or move the leave.</div>')+`<button onclick="V.fix=null;render()">Close</button></div>`}
+function vChg(){return`<div class=cd><b>Record a leave or comp-off</b><div class=bar><select id=lE>${opt(S.emps,'')}</select><input id=lD type=date value="${iso(15)}"><select id=lT><option value=L>Planned leave</option><option value=C>Comp-off</option></select><button class=pri onclick="addL()">Add and check impact</button></div>
+<div class=bar><button onclick="demo()">Demo: leave for a single-resource employee (Aarav, Kaya Naturals)</button><button onclick="auto()">Auto-fix gaps</button></div></div>
+<h3>Leaves and comp-offs</h3><div class=sc><table class=t><tr><th>Employee</th><th>Date</th><th>Type</th><th></th></tr>${S.leaves.map((l,i)=>`<tr><td>${esc((E[l.e]||{}).name)}</td><td>${l.d}</td><td>${l.t=='L'?'Leave':'Comp-off'}</td><td><button onclick="rmL(${i})">Remove</button></td></tr>`).join('')}</table></div>`}
+function rmL(i){const l=S.leaves[i];S.leaves.splice(i,1);if(l.d.startsWith(S.month)&&r(l.e,+l.d.slice(8))==l.t)delete R[l.e][+l.d.slice(8)];chd();save();render()}
+function vSet(){const T=(h,rows)=>`<div class=sc><table class=t><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${rows}</table></div>`;
+const cal=v=>Object.entries(CAL).map(([k,l])=>`<option value=${k} ${v==k?'selected':''}>${l}</option>`).join('');
+return`<h3>Employees</h3>${T(['Name','Pod','Preferred weekly off',''],S.emps.map((e,i)=>`<tr><td><input value="${esc(e.name)}" onchange="ed('emps',${i},'name',this.value)"></td><td><select onchange="ed('emps',${i},'pod',this.value)">${opt(S.pods,e.pod)}</select></td><td><select onchange="ed('emps',${i},'pref',this.value)"><option value="">Any</option>${DN.map((d,k)=>`<option value=${k} ${e.pref===k?'selected':''}>${d}</option>`).join('')}</select></td><td><button onclick="del('emps',${i})">Delete</button></td></tr>`).join(''))}<div class=bar><button onclick="addE()">Add employee</button></div>
+<h3>Pods and leads</h3>${T(['Pod','Lead'],S.pods.map((p,i)=>`<tr><td><input value="${esc(p.name)}" onchange="ed('pods',${i},'name',this.value)"></td><td><select onchange="ed('pods',${i},'lead',this.value)">${opt([{id:'',name:'None'}].concat(S.emps.filter(e=>e.pod==p.id)),p.lead)}</select></td></tr>`).join(''))}
+<h3>Brands, processes and working rules</h3>${T(['Brand','Process','Operating calendar','Min staff','Min on Sat/Sun',''],S.procs.map((p,i)=>`<tr><td>${esc(B[p.b].name)}</td><td><input value="${esc(p.name)}" onchange="ed('procs',${i},'name',this.value)"></td><td><select onchange="ed('procs',${i},'cal',this.value)">${cal(p.cal)}</select></td><td><input type=number min=0 value=${p.min} onchange="ed('procs',${i},'min',this.value)"></td><td><input type=number min=0 value=${p.wmin} onchange="ed('procs',${i},'wmin',this.value)"></td><td><button onclick="del('procs',${i})">Delete</button></td></tr>`).join(''))}
+<div class=bar><input id=nB list=bl placeholder="Brand (new or existing)"><datalist id=bl>${S.brands.map(b=>`<option value="${esc(b.name)}">`).join('')}</datalist><input id=nP placeholder="Process, e.g. CS"><select id=nC>${cal('s')}</select><input id=nM type=number min=0 value=1 title="Min staff" style="width:70px"><input id=nW type=number min=0 value=1 title="Min Sat/Sun" style="width:70px"><button onclick="addP()">Add process</button></div>
+<h3>Assignments (primary = owns the process, backup = covers when a primary is off)</h3>${T(['Employee','Process','Role',''],S.asg.map((a,i)=>`<tr><td>${esc(E[a.e].name)}</td><td>${esc(B[P[a.p].b].name)} · ${P[a.p].name}</td><td>${a.r=='P'?'Primary':'Backup'}</td><td><button onclick="del('asg',${i})">Remove</button></td></tr>`).join(''))}
+<div class=bar><select id=aE>${opt(S.emps,'')}</select><select id=aP>${opt(S.procs.map(p=>({id:p.id,name:B[p.b].name+' · '+p.name})),'')}</select><select id=aR><option value=P>Primary</option><option value=B>Backup</option></select><button onclick="addA()">Add assignment</button></div>
+<h3>Public holidays (YYYY-MM-DD, comma separated)</h3><textarea rows=2 onchange="S.hol=this.value.split(/[\\s,]+/).filter(Boolean);save();render()">${S.hol.join(', ')}</textarea>
+<p class=mu>Setup changes do not rebuild the roster. Press Generate roster to apply them, or keep your manual edits (outlined cells are preserved).</p><div class=bar><button onclick="reset()">Restore sample data</button></div>`}
+function render(){const A=an(),er=A.I.filter(x=>x.s=='error').length,wn=A.I.filter(x=>x.s=='warn').length,pc=A.req?Math.round(100*A.ok/A.req):100;
+$('#app').innerHTML=`<header><div><h1>Smart Roster Manager</h1><span class=mu>${S.emps.length} employees · ${S.brands.length} brands · ${S.procs.length} processes · ${S.pods.length} pods</span></div>
+<div class=bar><input type=month value="${S.month}" onchange="setMonth(this.value)"><button class=pri onclick="gen()">Generate roster</button><button onclick="auto()">Auto-fix gaps</button><button onclick="pub()">${S.pub[S.month]?'Published ✓':'Publish'}</button></div></header>
+<div class=kp><div class="k ${er?'bad':'good'}"><b>${er}</b>mandatory conflicts</div><div class=k><b>${wn}</b>preference warnings</div><div class=k><b>${pc}%</b>process-days covered</div></div>
+${V.msg?`<p class=note><span>${V.msg}</span><button onclick="V.msg='';render()">Dismiss</button></p>`:''}
+<nav>${[['roster','Roster'],['emp','Employee'],['issues','Conflicts ('+er+')'],['chg','Changes'],['set','Setup']].map(([k,l])=>`<button class="${V.tab==k?'on':''}" onclick="V.tab='${k}';render()">${l}</button>`).join('')}</nav>
+<main>${({roster:vRoster,emp:vEmp,issues:vIssues,chg:vChg,set:vSet})[V.tab](A)}</main>`}
+S=load();{const had=S.R&&S.R[S.month];if(!S.R)S.R={};if(!S.pub)S.pub={};rb();if(!had)gen();else render()}
+</script></body></html>
