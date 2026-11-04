@@ -17,8 +17,6 @@ A browser-based tool that lets an operations manager plan, generate, validate an
 6. **Publish** is blocked while mandatory conflicts remain.
 7. **Setup tab:** add or edit employees, pods, brands, processes, calendars, minimum staffing, assignments and holidays. No code changes are needed.
 
-To run locally, open `index.html` in a browser. To deploy, use GitHub Pages: Settings → Pages → deploy from branch `main`, folder `/`.
-
 ---
 
 ## Sample data
