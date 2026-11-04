@@ -2,7 +2,7 @@
 
 A browser-based tool that lets an operations manager plan, generate, validate and change monthly rosters for many brands, processes and pods. It is a single static page (`index.html`, no build step, no backend, no environment variables, so no `.env.example` is needed).
 
-**Live app:** `<paste your public URL here>`
+**Live app:** `(https://taniadhabak123.github.io/Smart-Roster-Manager/)`
 **Built by:** Tania Alimuddin Dhabak. The data model, rules and trade-offs are documented below.
 
 ---
