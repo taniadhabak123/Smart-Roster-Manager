@@ -77,34 +77,6 @@ A browser-based tool that lets an operations manager plan, generate, validate an
 
 ---
 
-## Tell us how you think
-
-**1. How did you model employees, brands, processes, pods and their relationships?**
-Pods contain employees. Brands contain processes, and each process owns its operating calendar and staffing minimums. An assignment links an employee to a process as primary or backup. Everything else, such as brand, pod and employee views, is derived from these links. A single-resource brand is not a special type. It is a brand where one employee holds all its processes.
-
-**2. How does the system generate a roster and check the constraints?**
-It fixes the unavoidable offs first (closures, leaves, comp-offs, manual pins), then places weekly offs where they cause the least coverage damage. A separate validator recomputes coverage per process per day from the roster and reports every mandatory and preference violation.
-
-**3. How did you handle single-resource brands versus multi-employee brands?**
-Both go through the same coverage calculation. For a single-resource brand, any weekly off on an operating day is a gap, so the generator uses closed days, such as Sundays, when it can and otherwise needs a backup. For multi-employee brands, overlapping assignments create spare capacity, and the generator staggers weekly offs so overlapping staff are not off together.
-
-**4. What happens when an employee who manages all processes for a brand is unavailable on a required day?**
-The day is marked as leave. The validator reports a gap for each of that brand's processes operating that day and lists who is assigned and their status. Suggest fix then offers options: a floater who is free that day, moving a weekly off if that was the cause, or reconsidering the leave. The roster cannot be published until the gap is resolved.
-
-**5. How does it handle conflicting requirements or insufficient staffing?**
-It never silently produces an invalid roster. Mandatory rules (coverage, rest limits) are separated from preferences, and coverage always wins. When nothing automatic works, the issue stays flagged with a plain explanation and a manager decision is required. While building the sample data, Farah on Shoptide had no valid weekly off that kept NDR covered. The tool flagged it, and I resolved it by adding a backup.
-
-**6. Which parts did you automate, and which are under human control?**
-Automated: closure days, weekly-off placement, validation, fix suggestions, and auto-fix limited to weekly-off swaps. Human: approving leaves, applying suggestions (every fix is a click), adding backups or staff, manual edits (pinned), and publishing. Leave approval and staffing are judgement calls with people impact, so the tool recommends and the manager decides.
-
-**7. If the company doubled its team and brand count, what would you change?**
-I'd move storage to a backend database with an API, authentication and per-pod permissions. I'd replace the greedy generator with a constraint solver (OR-Tools CP-SAT), recompute only the days and processes affected by a change, and virtualise the grid. I'd also add an audit log and approval workflow.
-
-**8. With one more week, what would you improve first?**
-A solver-based generator with fair distribution of weekly offs and weekends, plus carry-over across month boundaries. After that: shift-level scheduling, automatic comp-off credits, notifications when a published roster changes, Excel export, and automated tests.
-
----
-
 ## Known limitations
 
 - Day-level scheduling only. There are no shifts or time slots, so "incompatible shifts" is only approximated by the one-brand-per-day backup rule.
